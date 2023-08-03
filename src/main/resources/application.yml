@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:h2:tcp://localhost/~/Desktop/jobs/spring_learn/h2/bin/jpashop
+    username: sa
+    password: 1234
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create # 어플리케이션 실행시점에 기존의 테이블 다 지우고 새로 생성한다.
+    properties:
+      hibernate:
+#        show_sql: true -> system.out을 통하여 배출
+        format_sql: true
+logging:
+  level:
+    org.hibernate.SQL: debug # 로그를 찍음
+    org.hibernate.bytecode: trace
