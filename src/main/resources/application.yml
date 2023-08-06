@@ -11,6 +11,7 @@ spring:
       hibernate:
 #        show_sql: true -> system.out을 통하여 배출
         format_sql: true
+        default_batch_fetch_size: 100 # in query로 collection들의 원소들을 가져온다.
 logging:
   level:
     org.hibernate.SQL: debug # 로그를 찍음

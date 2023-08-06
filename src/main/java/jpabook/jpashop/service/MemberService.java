@@ -43,6 +43,17 @@ public class MemberService {
         return memberRepository.find(memberId);
     }
 
+    /**
+     * 업데이트시에는 변경감지를 이용하자
+     * em.flush(),로 모든 영속성 컨텍스트를 반영하고 비운다.
+     * 커맨드와 쿼리를 분리하는 정책을 가지자.
+     */
+    @Transactional
+    public void update(Long id, String name) {
+        Member member = memberRepository.find(id);
+        member.setName(name);
+    }
+
     // 회원 조회
 
 }

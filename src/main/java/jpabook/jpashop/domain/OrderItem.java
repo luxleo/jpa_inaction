@@ -5,7 +5,7 @@ import jpabook.jpashop.domain.item.Item;
 import lombok.Getter;
 import lombok.Setter;
 
-import static jakarta.persistence.FetchType.*;
+import static jakarta.persistence.FetchType.LAZY;
 
 @Entity
 @Getter @Setter
