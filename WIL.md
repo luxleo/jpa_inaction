@@ -40,3 +40,12 @@
         4. 결과: 1+N의 쿼리 갯수가 -> 1+1로 줄어든다. 
         5. 원리: IN()절에 pk가 들어가서 순식간에 다 가져온다.
         6. 결론: ToOne은 join fetch로 쿼리 다운, Collection은 default_batch_size 로 해결
+    5. OSIV(open session in view)
+        1. spring.jpa.open-in-view: true인 경우 Controller에 있는 경우 응답이 반환 되기까지(혹은 view를 반환하기 까지) 
+            db 커넥션을 풀어주지 않는다. lazy loading등을 처리하기 위해 -> connection dry발생
+        2. spring.jpa.open-in-view; false인 경우 @Transaction내부에서 작업(트랜잭션)이 끝나면 바로 반환한다.
+            lazy fetch등을 해결하기 위해 @Transaction(readOnly=true)를 가지는 별도의 윈도우뷰를 위한 @Service를 따로 만든다.
+        3. 용례: 실시간 데이터등 복잡한 조회(주로 장애는 삭제,추가등의 간단한 업데이트가 아닌 조회에서 발생)를 가지는 경우 
+            spring.jpa.open-in-view:false로 설정
+            ADMIN:등 이용자가 작으면 유지 보수성(lazy loading등 복잡한 쿼리를 처리하기 위한 별도의 코드가 필요없음)을 높이기위해
+            true로 설정한다.
