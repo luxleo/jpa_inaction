@@ -49,3 +49,111 @@
             spring.jpa.open-in-view:false로 설정
             ADMIN:등 이용자가 작으면 유지 보수성(lazy loading등 복잡한 쿼리를 처리하기 위한 별도의 코드가 필요없음)을 높이기위해
             true로 설정한다.
+# spring data jpa
+    ./gradlew dependencies --configuration compileClasspath  -> 의존관계 확인
+## @PersistenceContext
+    jpa는 영속성 컨텍스트로 관리한다.
+    private final EntityManger em;과 같이 영속성을 주입해준다.
+    써야하는 이유:
+        스프링은 싱글톤으로 관리하는데 이떄 thread-safe를 보장 해야한다.
+        @PersistenceContext로 설정시 thread-safe를 보장해준다.(프록시 기술로 매번 생성해주기 때문)
+## CRUD
+    crud에서 update는 jpa에서는 기본적으로 변경감지 기능을 이용한다.
+## @Repository
+    이 어노테이션은 @ComponentScan + JPA 공통 예외 처리를 가능하게 해주는 부분까지 한다.
+## Spring data Jpa
+    인터페이스로 만드는데 어떻게 @Autowired와 같은 주입이 되나 -> spring data jpa가 프록시 기술로 클래스 만들어준다.
+## 쿼리 메소드
+    1.메소드 이름으로 쿼리 생성 가능
+        조회: find…By ,read…By ,query…By get…By,
+        https://docs.spring.io/spring-data/jpa/docs/current/reference/html/
+        #repositories.query-methods.query-creation
+        예:) findHelloBy 처럼 ...에 식별하기 위한 내용(설명)이 들어가도 된다.
+        COUNT: count…By 반환타입 long
+        EXISTS: exists…By 반환타입 boolean
+        삭제: delete…By, remove…By 반환타입 long
+        DISTINCT: findDistinct, findMemberDistinctBy
+        LIMIT: findFirst3, findFirst, findTop, findTop3
+    2. named query -> @Query생략 하고도 가능하다. 이유 => 엔티티에서 먼저 jpa기반 @NamedQuery를 탐색하므로
+        named query의 장점은 어플리케이션 실행시점에 오류 판단이 가능하다 => 기존의 jpql은 string이라서
+        잡아 낼수 없지만 named query의 경우 parsing을 먼저 진행하기 때문이다.
+    3. 값 타입 조회
+        값:    
+            @Query("select m.name from Member m")
+            List<String> findByUserName();
+
+        dto:
+            @Query("select new jpabook.jpashop.repository.springdatajpa.dto.MemberDto(m.name,m.age,m.id) from Member m")
+            List<MemberDto> findMemberAsDto();
+    4. 반환 타입: 오버로딩 하듯이 작성이 가능하다.
+        
+        컬렉션
+            결과 없음: 빈 컬렉션 반환
+        단건 조회
+            결과 없음: null 반환
+        결과가 2건 이상: javax.persistence.NonUniqueResultException 예외 발생
+        > 참고: 단건으로 지정한 메서드를 호출하면 스프링 데이터 JPA는 내부에서 JPQL의
+            Query.getSingleResult() 메서드를 호출한다. 이 메서드를 호출했을 때 조회 결과가 없으면
+            javax.persistence.NoResultException 예외가 발생하는데 개발자 입장에서 다루기가 상당히 불편하
+            다. 스프링 데이터 JPA는 단건을 조회할 때 이 예외가 발생하면 예외를 무시하고 대신에 null 을 반환한다.
+    5. 페이징 처리(JPA):
+        필수 조건: 모든 엔티티카운트, 페이징 조회시 orderby
+    6. 페이징 처리(spring data jpa):
+        코드:
+            @Query(value = "select m from Member m left join m.team",countQuery = "select count(m.id) from Member m")
+            Page<Member> findByUserName(String name, Pageable pageable);
+        두 번째 파라미터로 받은 Pageable 은 인터페이스다. 따라서 실제 사용할 때는 해당 인터페이스를 구현한
+        org.springframework.data.domain.PageRequest 객체를 사용한다.
+        카운트 쿼리 분리(이건 복잡한 sql에서 사용, 데이터는 left join, 카운트는 left join 안해도 됨)
+        실무에서 매우 중요!!!
+        > 참고: 전체 count 쿼리는 매우 무겁다.
+
+        반환타입:
+            Page -> 얘만 count 쿼리 나간다.
+            Slice (count X) 추가로 limit + 1을 조회한다. 그래서 다음 페이지 여부 확인(최근 모바일 리스트 생각해보
+                면 됨)
+            List (count X)
+
+    7. 벌크 업데이트:
+        bulk 연산시 바로 db로 가기때문에 , em.flush()&&em.clear()로 하거나 @Modifing(clear=true)")
+            @Modifying(clearAutomatically = true) //이거 없으면 무조건 조회로 생각한다.
+            @Query("update Member m set m.age = m.age+1 where m.age>:age")
+            int sample_updateMemberAge(int age);
+    8. entity graph: fetch join을 jpql없이 간단하게 할 수있도록한다. but웬만 하면 jpql짜고 간단한거에만 적용하자.
+            @Override -> JpaRepository override
+            @EntityGraph(attributePaths = {"team"})
+            List<Member> findAll();
+        
+            @Query("select m from Member m join fetch m.team") -> 직접
+            List<Member> manualJoinFetch();
+        
+            @EntityGraph(attributePaths = {"team"}) -> @EntityGraph이용 
+            @Query("select m from Member m ")
+            List<Member> annotJoinFetch();
+        
+            @EntityGraph(attributePaths = {"team"}) -> 쿼리메소드 + @EntityGraph이용
+            List<Member> findEntityGraphByName(@Param("name") String name); 
+    9. @QueryHints, @Lock
+        1.@QueryHints: jpa에게 힌트를 제공한다.
+            @QueryHints(value = @QueryHint(name = "org.hibernate.readOnly", value ="true"))
+            Member findReadOnlyByUsername(String username); -> jpa의 dirty checking 적용 안함
+            
+            page count query예시
+            @QueryHints(value = { @QueryHint(name = "org.hibernate.readOnly",
+            value = "true")},
+            forCounting = true)
+            Page<Member> findByUsername(String name, Pageable pageable);
+        2.@Lock : 데이터 락을 걸때 사용하자 별일 아니면 사용하지 않는다(락을 걸면 성능 저하 이슈) -> 자세한 내용은 jpa책 참조
+            @Lock(LockModeType.PESSIMISTIC_WRITE)
+            List<Member> findByUsername(String name);
+    10. 사용자 정의 repository: 아래와 같은 문제를 해결하기 위해 사용한다.
+        repository에 JPA 직접 사용( EntityManager )
+        스프링 JDBC Template 사용
+        MyBatis 사용
+        데이터베이스 커넥션 직접 사용 등등...
+        Querydsl 사용
+        사용법:
+        1. custom 기능을 넣을 interface 구현
+        2. MemberRepositoryImpl으로 커스텀 interface 구현=> 이건 관례니까 명명 규칙 지키자.
+        3. spring data jpa repository에 extends 해준다.
+        

@@ -1,6 +1,6 @@
 spring:
   datasource:
-    url: jdbc:h2:tcp://localhost/~/Desktop/jobs/spring_learn/h2/bin/jpashop
+    url: jdbc:h2:mem:test
     username: sa
     password: 1234
     driver-class-name: org.h2.Driver
@@ -16,4 +16,4 @@ spring:
 logging:
   level:
     org.hibernate.SQL: debug # 로그를 찍음
-    org.hibernate.bytecode: trace
+    #org.hibernate.type: trace # 그 파라미터 확인

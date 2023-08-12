@@ -6,7 +6,6 @@ import jpabook.jpashop.domain.Member;
 import jpabook.jpashop.domain.Order;
 import jpabook.jpashop.domain.OrderState;
 import jpabook.jpashop.domain.item.Book;
-import jpabook.jpashop.domain.item.Item;
 import jpabook.jpashop.exception.NotEnoughStockException;
 import jpabook.jpashop.repository.OrderRepository;
 import org.junit.jupiter.api.Assertions;
@@ -14,8 +13,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
-
-import static org.junit.jupiter.api.Assertions.fail;
 
 
 @SpringBootTest
@@ -83,9 +80,11 @@ class OrderServiceTest {
     }
 
     private Member getMember() {
-        Member member = new Member();
-        member.setName("kim");
-        member.setAddress(new Address("busan","new_hwamuyeong","1234-1234"));
+
+        Member member = Member.builder()
+                .name("kim")
+                .address(new Address("busan","new_hwamuyeong","1234-1234"))
+                .build();
         em.persist(member);
         return member;
     }
