@@ -11,7 +11,7 @@ import java.util.List;
 @Getter
 @Setter // Setter 사용하는 방식 보다 생성자로 생성하도록 한다.
 @NoArgsConstructor(access = AccessLevel.PROTECTED) //spring 컨테이너가 proxy기술로 만들때 사용
-@ToString(of = {"id", "name","createdDate","lastModifiedDate"})
+@ToString(of = {"id", "name","age","createdDate","lastModifiedDate"})
 @NamedQuery(
         name = "Member.findByUserName",
         query = "select m from Member m where name = :name"
@@ -40,6 +40,11 @@ public class Member extends BaseEntity {
         this.name = name;
         this.address = address;
         this.team = team;
+        this.age = age;
+    }
+
+    public Member(String name, int age) {
+        this.name = name;
         this.age = age;
     }
     public void changeTeam(Team team) {
