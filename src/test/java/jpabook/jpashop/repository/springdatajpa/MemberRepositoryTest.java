@@ -55,6 +55,5 @@ class MemberRepositoryTest {
         //update 검증
         foundMember1.setName("changed!!");
 
-
     }
 }

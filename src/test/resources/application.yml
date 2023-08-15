@@ -1,8 +1,10 @@
 spring:
+  profiles:
+    active: test
   datasource:
     url: jdbc:h2:mem:test
     username: sa
-    password:
+    password: 1234
     driver-class-name: org.h2.Driver
   jpa:
     hibernate:
@@ -11,7 +13,9 @@ spring:
       hibernate:
 #        show_sql: true -> system.out을 통하여 배출
         format_sql: true
+        default_batch_fetch_size: 100 # in query로 collection들의 원소들을 가져온다.
+    open-in-view:
 logging:
   level:
     org.hibernate.SQL: debug # 로그를 찍음
-    org.hibernate.bytecode: trace
+    org.hibernate.type: trace # 그 파라미터 확인

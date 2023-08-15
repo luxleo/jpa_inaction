@@ -90,3 +90,55 @@
 ## bulk update and Persistence Context
 
 ## sql function
+
+## 영속성 컨텍스트와 트랜잭션, 빈등록 주입, 수동 주입
+    EntityManager는 스프링빈에 등록되어 사용 될때 싱글톤으로 동작한다.(당연히 빈이니깐 ㅎㅎ)
+    하지만 멀티스레드 환경에서도 이상없이 동작한다. 그 이유는 EntityManger가 스프링에서 동작할때
+    스프링이 트랜잭션마다 프록시 객체를 생성하여 주기 때문이다.
+    -> 따라서 스프링 빈으로 등록한 JpaQueryFactory도 멀티스레드 환경에서 안전하게 동작한다.
+    가급적 생성자 주입으로 구현하자 => application에 JpaQueryFactory bean등록 해주어야한다.
+    아니면 수동으로 
+        private JpaQueryFactory query;
+        public [className](EntityManager em){
+            this.em = em;
+            this.query = new JpaQueryFactory(em);
+        }
+## queryDsl로 동적 쿼리 작성시 유의점
+    문제점: 만일 filter조건이 모두 없는 경우 -> 해당 엔티티(테이블)의 모든 데이터를 긁어온다.
+    만일 30만명의 회원이 있다면 -> ㅎㅎㅎ 30만을 긁어오네?
+    
+    해결책: 
+        0. 기본 조건을 둬라
+        1. limit조건이라도 둬라.
+        2. 페이징 처리를 하라.
+## 동적 쿼리
+    기본형인 Predicate로 하지말고 BooleanExpression으로 구현하면 조립할수 있다.
+## active profile로 설정별 (개발, 테스트 ,배포) 나누기
+    resources/application.yml에 정의 한다. 
+    spring.profiles.active="프로필 이름"
+## custom spring data jpa 구현 -> + presentation layer에 특화된 경우 레포지토리 분리
+    1. 커스텀 조회 로직 구현할 아무이름의 인터페이스 정의
+        public interface QMemberRepositoryCustom {
+           List<MemberDto> searchWithCond(QMemberSearchCond searchCond);
+        }
+    2. 정의된 spring data jpa repository+Impl class 정의
+        @RequiredArgsConstructor
+        public class QMemberRepositoryImpl implements QMemberRepositoryCustom {
+            private final JPAQueryFactory query;
+            @Override
+            public List<MemberDto> searchWithCond(QMemberSearchCond searchCond) {
+                return query.select(Projections.bean(MemberDto.class,
+                        member.name, member.age))
+                        .from(member)
+                        .leftJoin(member.team, team)
+                        .where(
+                        memberNameEq(searchCond.getMemberName())
+                        , teamNameEq(searchCond.getTeamName())
+                        , userAgeGoe(searchCond.getAgeGoe())
+                        , userAgeLoe(searchCond.getAgeLoe()))
+                        .fetch();
+            }
+        }
+    3. 본 레포지토리에 커스텀 인터페이스 상속 
+        public interface QMemberRepository extends JpaRepository<Member,Long>, QMemberRepositoryCustom {
+    
